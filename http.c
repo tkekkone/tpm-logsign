@@ -27,12 +27,4 @@ void getDataFile(char* file){
 
 }
 
-/*int main(void)
-  {
-  sendHTTPRequest("http://www.kekkis.com");
-//  getDataFile("/home/xtktuom/koodi/Koodia/measureC/program.c");
-  return 0;
-  }
-*/
-
 
