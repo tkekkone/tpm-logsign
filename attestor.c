@@ -69,17 +69,14 @@ TSS_UUID createSigningkey(){
 	TSS_UUID SIGNING_UUID = TSS_UUID_SIGN;
 	TSS_UUID SRK_UUID=TSS_UUID_SRK;
 	FILE *fout;
-	// We are going to create a Signing
-	// Here I determine the key will be a Signing key of 2048 bits, nonmigratable, with no authorization.
+	//key flags
 	initFlags = TSS_KEY_TYPE_SIGNING | TSS_KEY_SIZE_2048 | TSS_KEY_NO_AUTHORIZATION | TSS_KEY_NOT_MIGRATABLE;
-	// Create the key object
 	result=Tspi_Context_CreateObject(hContext, TSS_OBJECT_TYPE_RSAKEY,initFlags, &hSigning_Key);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Tspi_Context_CreateObjectSigningKey",result);
-	// Now I finally create the key, with the SRK as its parent.
 	printf("Creating key... this may take some time\n");
 	result=Tspi_Key_CreateKey(hSigning_Key,hSRK, 0);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Create Key", result);
-	// Once created, I register the key blob so I can retrieve it later
+	//register the key
 	result=Tspi_Context_RegisterKey(hContext,hSigning_Key, TSS_PS_TYPE_SYSTEM, SIGNING_UUID, TSS_PS_TYPE_SYSTEM, SRK_UUID);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Registerkey",result);
 	if(result==0x00002008){//already registerd
@@ -119,8 +116,7 @@ int verifySignature(){
 	
 	printf("File to verify: %s\nFile with key: %s\nFile with signature: %s\n", filename, keyfilename, sigfilename);
 	
-	// Create a Hash Object so as to have something to compare the signature to
-	// Create a generic Hash object //
+	// Create a Hash Object 
 	result= Tspi_Context_CreateObject(hContext, TSS_OBJECT_TYPE_HASH, TSS_HASH_SHA1, &hHashToVerify); 
 	if(result!=0x00000000 || verbose == TRUE)
 		DBG("Create Hashobject", result);	
@@ -132,12 +128,12 @@ int verifySignature(){
 	fclose(fin);
 	printf("File content: %s\n", fileToVerify);
 	
-	// Hash the data using SHA1//
+	// Hash the data
 	result=Tspi_Hash_UpdateHashValue(hHashToVerify,fileLength,fileToVerify);
 	if(result!=0x00000000 || verbose == TRUE)
 		DBG("Hash in the public key", result);
 	
-	// We are going to create a Verify key
+	// Verify key
 	pubVerifyKey = malloc(284);
 	fin=fopen(keyfilename, "r");
 	read(fileno(fin),pubVerifyKey,284);
@@ -148,7 +144,7 @@ int verifySignature(){
 	result=Tspi_SetAttribData(hVerify_Key,TSS_TSPATTRIB_KEY_BLOB,TSS_TSPATTRIB_KEYBLOB_PUBLIC_KEY,284,pubVerifyKey);	
 	if(result!=0x00000000 || verbose == TRUE) DBG("SetPubKeyinVerify_Key", result);
 	
-	// Read in signature and verify it
+	// Read signature 
 	signatureToVerify = malloc(256);
 	fin=fopen(sigfilename, "r"); //signature to verify
 	read(fileno(fin), signatureToVerify, 256);
@@ -189,7 +185,7 @@ void sign(){
 	signatureLength = signData(prgbData, pubKeyLength, &signature, &hex);	
 	
 	free(prgbData);	
-	// Write the resultant signature to a file called Signature.dat
+	// Write the resultto a file
 	if(sigfilename)
 		fout=fopen(sigfilename, "w");			
 	else
@@ -215,28 +211,26 @@ int signData(BYTE *prgbData, UINT32 pubKeyLength, BYTE **signature, BYTE **signa
 	*signatureInHex = malloc(513);
 	TSS_UUID SIGNING_UUID = TSS_UUID_SIGN;
 	
-	//SIGNING_UUID = createSigningkey();
-	// Get the Signing key handle from the standard UUID
+	
 	result=Tspi_Context_GetKeyByUUID(hContext,TSS_PS_TYPE_SYSTEM,SIGNING_UUID,&hSigning_Key);
 	if(result!=0x00000000 || verbose == TRUE)
 		DBG("Get Key byUUID",result);
 
-	// Load the private key into the TPM using its handle
+	// Load the  key to TPM
 	result=Tspi_Key_LoadKey(hSigning_Key,hSRK);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Load Key", result);
 
-	// Create a Hash Object so as to have something to sign so we create a generic Hash object //
+	// Create hash Object
 	result=Tspi_Context_CreateObject(hContext, TSS_OBJECT_TYPE_HASH, TSS_HASH_SHA1, &hHashToSign);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Create Hash object", result);
 	
 	//printf("data to hash: %s\n\n",prgbData);
-	// Hash the data using SHA1//
+	// Hash the data
 	result=Tspi_Hash_UpdateHashValue(hHashToSign,pubKeyLength,prgbData);
 	//printf("length: %i file: %s\n", pubKeyLength, prgbData);
 	if(result!=0x00000000 || verbose == TRUE) DBG("Hash in the data", result);
 
-	
-	// Sign the resultant hash object
+	// Sign the result
 	result=Tspi_Hash_Sign(hHashToSign,hSigning_Key,&ulSignatureLength,signature);
 	
 	if(result!=0x00000000 || verbose == TRUE) DBG("Sign",result);
