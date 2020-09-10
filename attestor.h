@@ -24,3 +24,4 @@ void appendHash(unsigned char *data, unsigned char *hash);
 void createAttestorFile(UINT32 pcrIndex, char *nonce_, BYTE **validationdata, UINT32 *validlength);
 void sign();
 int signData(BYTE *prgbData, UINT32 pubKeyLength, BYTE **signature, BYTE **signatureInHex);
+int writeSyslog(int priority, const char *text);

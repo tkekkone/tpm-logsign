@@ -47,7 +47,6 @@ void readFile(){
 			linebuffer = NULL;
 			free(hexSignature);
 			free(signature);
-			
 			}			
 		}	
 	//printf("Done reading file\n");
@@ -109,7 +108,7 @@ void syslogmonitor(){
 
 
 
-displayInotifyEvent(struct inotify_event *i)
+void displayInotifyEvent(struct inotify_event *i)
  {
      printf("    wd =%2d; ", i->wd);
      if (i->cookie > 0)
